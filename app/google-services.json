@@ -1,27 +1,27 @@
 {
   "project_info": {
-    "project_number": "582790062665",
-    "firebase_url": "https://zhap-66ed5.firebaseio.com",
-    "project_id": "zhap-66ed5",
-    "storage_bucket": "zhap-66ed5.appspot.com"
+    "project_number": "818728662699",
+    "firebase_url": "https://zha-admin.firebaseio.com",
+    "project_id": "zha-admin",
+    "storage_bucket": "zha-admin.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:582790062665:android:89b338b3e068ee87",
+        "mobilesdk_app_id": "1:818728662699:android:89b338b3e068ee87",
         "android_client_info": {
           "package_name": "com.example.hp.zha"
         }
       },
       "oauth_client": [
         {
-          "client_id": "582790062665-he1jqrrbd6qc93kjiielllancv3pjqss.apps.googleusercontent.com",
+          "client_id": "818728662699-licarhtcvpn4hgedlp506on06c9rbsj5.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyDpvBEYOdoQrzjNJxMoB6Li2PoOl0CUS0k"
+          "current_key": "AIzaSyDn_RnaorlWwi6vFbX6LZDuUtcfx0sqpBI"
         }
       ],
       "services": {

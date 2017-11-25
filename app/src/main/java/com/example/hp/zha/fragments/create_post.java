@@ -51,10 +51,6 @@ public class create_post extends Fragment
     public Bitmap bitmap;
     public String  picturePath;
     Uri yourUri,imageUri    ;
-    public Firebase fb;
-    public String url="https://zhap-66ed5.firebaseio.com/";
-    public StorageReference fb_stg;
-    public FirebaseStorage storage;
     public ProgressDialog progressDialog;
     public create_post()
     {
@@ -71,8 +67,6 @@ public class create_post extends Fragment
         send=(FloatingActionButton)view.findViewById(R.id.sendpost);
         imageView=(ImageView)view.findViewById(R.id.post_image);
         td=(TextInputEditText)view.findViewById(R.id.posttitle);
-        Firebase.setAndroidContext(view.getContext());
-        fb=new Firebase(url);
 
         ig1.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -121,7 +115,7 @@ public class create_post extends Fragment
         send.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                new MyTask().execute();
+
             }
         });
 
@@ -166,48 +160,6 @@ public class create_post extends Fragment
             }
         }
 
-
-    }
-    public class MyTask extends AsyncTask<String, Integer, String>{
-
-        @Override
-        protected void onPreExecute() {
-            progressDialog=new ProgressDialog(getContext());
-            progressDialog.setMessage("Creating event...");
-            progressDialog.setCancelable(false);
-            progressDialog.show();
-            super.onPreExecute();
-
-        }
-
-        @Override
-        protected String doInBackground(String... strings) {
-            fb_stg=FirebaseStorage.getInstance().getReference();
-            Calendar c =Calendar.getInstance();
-            SimpleDateFormat sdf= new SimpleDateFormat("dd-MM-yyyy");
-            SimpleDateFormat ssf=new SimpleDateFormat("HH:mm");
-            final String date=sdf.format(c.getTime());
-            final String time=ssf.format(c.getTime());
-            System.out.println("ammo"+time);
-            final String posttitle=td.getText().toString();
-
-            StorageReference stg=fb_stg.child("Post").child(date+"@"+time+"@"+posttitle);
-            stg.putFile(imageData).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                @Override
-                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                    Uri downloaduri=taskSnapshot.getDownloadUrl();
-                    String downloadurl=downloaduri.toString();
-                    postAdap postadap=new postAdap();
-                    postadap.setImgurl(downloadurl);
-                    postadap.setTitle(posttitle);
-                    fb.child("Post").child(date+"@"+time+"@"+posttitle).setValue(postadap);
-                    progressDialog.dismiss();
-                    getFragmentManager().beginTransaction().replace(R.id.frame_container,new post()).commit();
-                }
-            });
-
-            return null;
-        }
 
     }
 }

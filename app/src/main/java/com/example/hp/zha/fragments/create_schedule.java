@@ -30,8 +30,7 @@ import java.util.Calendar;
  */
 
 public class create_schedule extends Fragment implements TimePickerDialog.OnTimeSetListener{
-    Firebase fb;
-    String url="https://zhap-66ed5.firebaseio.com/";
+
     FloatingActionButton time,add;
     ImageView ig1;
     TextInputEditText ed;
@@ -51,7 +50,6 @@ public class create_schedule extends Fragment implements TimePickerDialog.OnTime
         ig1=(ImageView)view2.findViewById(R.id.imageButton);
         add=(FloatingActionButton)view2.findViewById(R.id.add);
         Firebase.setAndroidContext(view2.getContext());
-        fb=new Firebase(url);
         ig1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -79,7 +77,7 @@ public class create_schedule extends Fragment implements TimePickerDialog.OnTime
         add.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                new MyTask().execute();
+
             }
         });
         return view2;
@@ -93,19 +91,6 @@ public class create_schedule extends Fragment implements TimePickerDialog.OnTime
         String stime = hourString + "h" + minuteString + "m" + secondString + "s";
         Toast.makeText(getActivity(), ""+stime, Toast.LENGTH_SHORT).show();
         ti.setText(stime);
-    }
-    public class MyTask extends AsyncTask<String, Integer, String> {
-
-        @Override
-        protected String doInBackground(String... strings) {
-            String descr=ed.getText().toString();
-            String time=ti.getText().toString();
-            schAdap schadap=new schAdap();
-            schadap.setDesc(descr);
-            fb.child("Schedule").child(dummy.date_picked).child(time).setValue(schadap);
-            getFragmentManager().beginTransaction().replace(R.id.frame_container,new schedule_view()).commit();
-            return null;
-        }
     }
 
 }

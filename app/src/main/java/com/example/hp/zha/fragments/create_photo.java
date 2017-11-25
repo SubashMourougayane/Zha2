@@ -1,18 +1,29 @@
 package com.example.hp.zha.fragments;
 
+import android.Manifest;
+import android.annotation.TargetApi;
+import android.app.Activity;
 import android.app.Fragment;
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.ProgressDialog;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v13.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,20 +32,29 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.example.hp.zha.Adapters.Permision;
 import com.example.hp.zha.Adapters.photoAdap;
 import com.example.hp.zha.Adapters.postAdap;
 import com.example.hp.zha.R;
 import com.firebase.client.Firebase;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.OnProgressListener;
+import com.google.firebase.storage.StorageMetadata;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 
 import static android.app.Activity.RESULT_OK;
+import static android.content.Context.NOTIFICATION_SERVICE;
 
 /**
  * Created by HP on 11/17/2017.
@@ -44,17 +64,18 @@ public class create_photo extends Fragment {
     ImageView ig1, ig2, imageView;
     public EditText des;
     FloatingActionButton send;
-    CharSequence[] items = {"Take Photo", "Choose from library", "Cancel"};
-    public static final int PICK_IMAGE = 1;
-    public static final int RESULT_LOAD_IMAGE = 2;
-    Uri imageData,imageUri;
-    public Bitmap bitmap;
-    public String picturePath;
-    Uri yourUri;
-    public Firebase fb;
-    public String url="https://zhap-66ed5.firebaseio.com/";
-    public StorageReference fb_stg;
     public ProgressDialog progressDialog;
+    public StorageReference fb_stg;
+    public Firebase fb;
+    String Base_Url = "https://zha-admin.firebaseio.com/Admin/";
+    double progress = 0.0;
+    Notification notification;
+    String userChoosenTask;
+    int REQUEST_CAMERA = 100;
+    int SELECT_FILE = 101;
+    Uri SelectedUri=null;
+    private String selectedImagePath;
+    String mCurrentPhotoPath;
 
     public create_photo() {
 
@@ -69,8 +90,9 @@ public class create_photo extends Fragment {
         imageView=(ImageView)view1.findViewById(R.id.select);
         des=(EditText)view1.findViewById(R.id.description);
         send=(FloatingActionButton)view1.findViewById(R.id.floatingActionButton3);
-        Firebase.setAndroidContext(view1.getContext());
-        fb=new Firebase(url);
+        Firebase.setAndroidContext(getActivity());
+        fb = new Firebase(Base_Url);
+
         ig1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view)
@@ -82,132 +104,121 @@ public class create_photo extends Fragment {
 
         send.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-                new MyTask().execute();
+            public void onClick(View view)
+            {
+//                new MyTask().execute();
             }
         });
         imageView.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(final View view) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(view.getContext());
-                builder.setTitle("Choose image");
-                builder.setItems(items, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        if (items[i].equals("Take Photo")) {
-                            String fileName = "new-photo-name.jpg";
-                            ContentValues values = new ContentValues();
-                            values.put(MediaStore.Images.Media.TITLE, fileName);
-                            values.put(MediaStore.Images.Media.DESCRIPTION, "Image capture by camera");
-                            //imageUri is the current activity attribute, define and save it for later usage (also in onSaveInstanceState)
-                            imageUri = getActivity().getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-                            Intent intent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
-                            startActivityForResult(intent, PICK_IMAGE);
-                            Toast.makeText(view.getContext(), "Say Cheese", Toast.LENGTH_LONG).show();
-                        }
-                        if (items[i].equals("Choose from library")) {
-                            bitmap = null;
-                            imageData = null;
-                            Intent it = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-                            startActivityForResult(it, RESULT_LOAD_IMAGE);
-                            Toast.makeText(view.getContext(), "Select One Picture", Toast.LENGTH_LONG).show();
-
-
-                        }
-                        if (items[i].equals("Cancel")) {
-                            Toast.makeText(view.getContext(), "Go Back To Redo Action", Toast.LENGTH_LONG).show();
-
-                            dialogInterface.dismiss();
-                        }
-                    }
-                });
-                builder.show();
+            public void onClick(View view) {
+                    selectImage();
             }
         });
         return view1;
     }
-
+    private void selectImage() {
+        final CharSequence[] items = { "Take Photo", "Choose from Library",
+                "Cancel" };
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle("Add Photo!");
+        builder.setItems(items, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int item) {
+                boolean result= Permision.checkPermission(getActivity());
+                if (items[item].equals("Take Photo")) {
+                    userChoosenTask="Take Photo";
+                    if(result)
+                        cameraIntent();
+                } else if (items[item].equals("Choose from Library")) {
+                    userChoosenTask="Choose from Library";
+                    if(result)
+                        galleryIntent();
+                } else if (items[item].equals("Cancel")) {
+                    dialog.dismiss();
+                }
+            }
+        });
+        builder.show();
+    }
+    private void cameraIntent()
+    {
+        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        startActivityForResult(intent, REQUEST_CAMERA);
+    }
+    private void galleryIntent()
+    {
+        Intent intent = new Intent();
+        intent.setType("image/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);//
+        startActivityForResult(Intent.createChooser(intent, "Select File"),SELECT_FILE);
+    }
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        switch (requestCode) {
+            case Permision.MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    if(userChoosenTask.equals("Take Photo"))
+                        cameraIntent();
+                    else if(userChoosenTask.equals("Choose from Library"))
+                        galleryIntent();
+                } else {
+                    //code for deny
+                }
+                break;
+        }
+    }
+    @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-
-
-        if (requestCode == PICK_IMAGE) {
-            if (resultCode == RESULT_OK) {
-
-                bitmap = (Bitmap) data.getExtras().get("data");
-                imageData = imageUri;
-               imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-
-                imageView.setImageBitmap(bitmap);
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == Activity.RESULT_OK) {
+            if (requestCode == SELECT_FILE){
+                SelectedUri = data.getData();
+                System.out.println("URI FILE "+SelectedUri);
+                imageView.setImageURI(SelectedUri);
+                onSelectFromGalleryResult(data);
+            }
+            else if (requestCode == REQUEST_CAMERA){
+                SelectedUri = data.getData();
+                System.out.println("URI CAM "+SelectedUri);
+                imageView.setImageURI(SelectedUri);
+                onCaptureImageResult(data);
             }
         }
-        if (requestCode == RESULT_LOAD_IMAGE) {
-            if (resultCode == RESULT_OK) {
-                try {
-                    imageData = data.getData();
-                    String[] filePathColumn = {MediaStore.Images.Media.DATA};
+    }
+    private void onSelectFromGalleryResult(Intent data)
+    {
 
-                    Cursor cursor = getActivity().getContentResolver().query(imageData, filePathColumn, null, null, null);
-                    cursor.moveToFirst();
-
-                    int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
-                    picturePath = cursor.getString(columnIndex);
-
-
-                    yourUri = Uri.parse(picturePath);
-
-
-                    bitmap = MediaStore.Images.Media.getBitmap(getActivity().getContentResolver(), imageData);
-                    imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-                    imageView.setImageBitmap(bitmap);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+        Bitmap bm=null;
+        if (data != null) {
+            try {
+                bm = MediaStore.Images.Media.getBitmap(getActivity().getContentResolver(), data.getData());
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
-
-
+        imageView.setImageBitmap(bm);
     }
-    public class MyTask extends AsyncTask<String, Integer, String> {
-
-        @Override
-        protected void onPreExecute() {
-            progressDialog=new ProgressDialog(getContext());
-            progressDialog.setMessage("Creating event...");
-            progressDialog.setCancelable(false);
-            progressDialog.show();
-            super.onPreExecute();
-
+    private void onCaptureImageResult(Intent data) {
+        Bitmap thumbnail = (Bitmap) data.getExtras().get("data");
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        thumbnail.compress(Bitmap.CompressFormat.JPEG, 90, bytes);
+        File destination = new File(Environment.getExternalStorageDirectory(),"img.jpg");
+        FileOutputStream fo;
+        try {
+            destination.createNewFile();
+            fo = new FileOutputStream(destination);
+            fo.write(bytes.toByteArray());
+            fo.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-
-        @Override
-        protected String doInBackground(String... strings) {
-            fb_stg= FirebaseStorage.getInstance().getReference();
-            Calendar c =Calendar.getInstance();
-            SimpleDateFormat sdf= new SimpleDateFormat("dd-MM-yyyy");
-            SimpleDateFormat ssf=new SimpleDateFormat("HH:mm");
-            final String date=sdf.format(c.getTime());
-            final String time=ssf.format(c.getTime());
-            System.out.println("ammo"+time);
-            final String posttitle=des.getText().toString();
-
-            StorageReference stg=fb_stg.child("Photo").child(date+"@"+time+"@"+posttitle);
-            stg.putFile(imageData).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                @Override
-                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                    Uri downloaduri=taskSnapshot.getDownloadUrl();
-                    String downloadurl=downloaduri.toString();
-                    photoAdap photoadap=new photoAdap();
-                    photoadap.setPurl(downloadurl);
-                    photoadap.setTitle(posttitle);
-                    fb.child("Photo").child(date+"@"+time+"@"+posttitle).setValue(photoadap);
-                    progressDialog.dismiss();
-                    getFragmentManager().beginTransaction().replace(R.id.frame_container,new photos()).commit();
-                }
-            });
-
-            return null;
-        }
-
+        imageView.setImageBitmap(thumbnail);
     }
+
+
+
 }
 

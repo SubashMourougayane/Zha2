@@ -31,8 +31,7 @@ import java.util.ArrayList;
  */
 
 public class schedule_view extends Fragment
-{   Firebase fb;
-    String url="https://zhap-66ed5.firebaseio.com/";
+{
     TextView t1,t2;
     ImageView ig1;
     RecyclerView recyclerView;
@@ -50,12 +49,9 @@ public class schedule_view extends Fragment
         t1=(TextView)view1.findViewById(R.id.add);
         t2=(TextView)view1.findViewById(R.id.date);
         ig1=(ImageView)view1.findViewById(R.id.imageButton);
-        Firebase.setAndroidContext(view1.getContext());
-        fb=new Firebase(url);
         t2.setText(dummy.date_picked);
         recyclerView=(RecyclerView)view1.findViewById(R.id.recycler_schedule);
         recyclerView.setLayoutManager(new LinearLayoutManager(view1.getContext()));
-        new MyTask().execute();
 //        sad.add(new scheduleAdapter());
 //        sad.add(new scheduleAdapter());
 //        sad.add(new scheduleAdapter());
@@ -79,30 +75,6 @@ public class schedule_view extends Fragment
         });
 
         return view1;
-    }
-    public class MyTask extends AsyncTask<String, Integer, String>{
-
-        @Override
-        protected String doInBackground(String... strings) {
-            fb.child("Schedule").child(dummy.date_picked).addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    for(DataSnapshot child: dataSnapshot.getChildren()){
-                        schAdap schadap=child.getValue(schAdap.class);
-                        sad.add(new scheduleAdapter(child.getKey(),schadap.getDesc()));
-                    }
-                    sID=new scheduleItemAdapter(R.layout.schedulecard,sad);
-                    recyclerView.setAdapter(sID);
-
-                }
-
-                @Override
-                public void onCancelled(FirebaseError firebaseError) {
-
-                }
-            });
-            return null;
-        }
     }
 
 }

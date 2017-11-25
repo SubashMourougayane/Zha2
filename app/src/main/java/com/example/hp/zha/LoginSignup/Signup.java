@@ -3,6 +3,7 @@ package com.example.hp.zha.LoginSignup;
 import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.graphics.Typeface;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -24,7 +25,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 
+import com.example.hp.zha.Adapters.UserCreds;
 import com.example.hp.zha.R;
+import com.firebase.client.Firebase;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
@@ -52,9 +55,12 @@ public class Signup extends AppCompatActivity implements AdapterView.OnItemSelec
     Button button_signup;
     TextView already_account;
     Spinner s1,s2;
+    String sp1,Sp2;
     TextInputLayout input_layout_name,input_layout_password,input_layout_mail,input_layout_MP,input_layout_MLA,input_layout_profession,input_layout_dob,input_layout_phone;
-
-    FirebaseAuth firebaseAuth;
+    UserCreds userCreds;
+    Firebase fb_db;
+    String Base_Url = "https://zha-admin.firebaseio.com/";
+    String Uname,MailID;
 
     private String email;
     private String password;
@@ -68,15 +74,12 @@ public class Signup extends AppCompatActivity implements AdapterView.OnItemSelec
     private DatePickerDialog datePickerDialog;
     private SimpleDateFormat dateFormatter;
 
-    DatabaseReference databaseReference;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_signup);
-
-        firebaseAuth = FirebaseAuth.getInstance();
-        databaseReference = FirebaseDatabase.getInstance().getReference();
-
+        Firebase.setAndroidContext(getApplicationContext());
+        fb_db = new Firebase(Base_Url);
         calligrapher = new Calligrapher(this);
         calligrapher.setFont(Signup.this,"Ubuntu_R.ttf",true);
 
@@ -134,14 +137,37 @@ public class Signup extends AppCompatActivity implements AdapterView.OnItemSelec
             @Override
             public void onClick(View view) {
                 validate();
+                new MyTask1().execute();
             }
         });
 
     }
+    private class MyTask1 extends AsyncTask<String, Integer, String>
+    {
+
+        @Override
+        protected String doInBackground(String... strings) {
+            userCreds = new UserCreds();
+            userCreds.Uname = input_name.getText().toString();
+            userCreds.Pass = input_password.getText().toString();
+            userCreds.DOB = input_dob.getText().toString();
+            userCreds.Mail = input_mail.getText().toString();
+            userCreds.PhNo = input_phone.getText().toString();
+            userCreds.Prof = input_profession.getText().toString();
+            userCreds.Dist = s1.getSelectedItem().toString();
+            userCreds.Const = s2.getSelectedItem().toString();
+
+//            String [] arr = input_mail.getText().toString().split(".");
+//            String Node = input_name.getText().toString()+"@"+arr[0];
+            fb_db.child("Admin").child("AdminCreds").child(input_name.getText().toString()).setValue(userCreds);
+            return null;
+        }
+    }
+
     public void onItemSelected(AdapterView<?> arg0, View arg1, int arg2,
                                long arg3) {
         // TODO Auto-generated method stub
-        String sp1= String.valueOf(s1.getSelectedItem());
+        sp1= String.valueOf(s1.getSelectedItem());
         if(sp1.contentEquals("THIRUVALLUR")) {
             List<String> list = new ArrayList<String>();
             list.add("Gummidipoondi");
@@ -289,6 +315,7 @@ public class Signup extends AppCompatActivity implements AdapterView.OnItemSelec
 
     }
 
+
     private void pickdob() {
         Calendar newCalendar = Calendar.getInstance();
         datePickerDialog = new DatePickerDialog(this, new DatePickerDialog.OnDateSetListener() {
@@ -345,48 +372,8 @@ public class Signup extends AppCompatActivity implements AdapterView.OnItemSelec
         email = input_mail.getText().toString().trim();
         password = input_password.getText().toString().trim();
         System.out.println("test ---> Entering validate");
-        firebaseAuth.createUserWithEmailAndPassword(email,password).addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-            @Override
-            public void onComplete(@NonNull Task<AuthResult> task) {
-                if(task.isSuccessful())
-                {
-                    System.out.println("test ---> Calling upload");
-                    uploadFirebaseData();
-                }
-                else
-                {
-                    Toast.makeText(Signup.this,"Registration Failed",Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
     }
 
-    private void uploadFirebaseData() {
-        name = input_name.getText().toString().trim();
-        phone = input_phone.getText().toString().trim();
-        dob = input_dob.getText().toString().trim();
-      //  location = input_location.getText().toString().trim();
-        profession = input_profession.getText().toString().trim();
-      //  post = input_post.getText().toString().trim();
-
-       // System.out.println("test ---> "+name+phone+dob+location+profession+post);
-        FirebaseUser user = firebaseAuth.getCurrentUser();
-
-        SignUpAdapter signUpAdapter = new SignUpAdapter();
-        signUpAdapter.setName(name);
-        signUpAdapter.setMail(email);
-        signUpAdapter.setPassword(password);
-        signUpAdapter.setPhone(phone);
-      //  signUpAdapter.setLocation(location);
-        signUpAdapter.setDob(dob);
-        signUpAdapter.setProfession(profession);
-       // signUpAdapter.setPost(post);
-
-      //  databaseReference.child("Users").child(location).child(post).child(user.getUid()).setValue(signUpAdapter);
-
-        this.finish();
-        startActivity(new Intent(this,Login.class));
-    }
 
     private boolean validateName() {
         if ((input_name.getText().toString().trim().isEmpty())||(input_name.getText().toString().length()<5)) {

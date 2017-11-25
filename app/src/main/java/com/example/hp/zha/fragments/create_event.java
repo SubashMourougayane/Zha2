@@ -67,9 +67,7 @@ public class create_event extends Fragment implements DatePickerDialog.OnDateSet
     Spinner spinner;
     ImageView ig1,ig2,imageView;
     RecyclerView recyclerView1;
-    Firebase fb;
     StorageReference storageReference;
-    String url="https://zhap-66ed5.firebaseio.com/";
     CharSequence[] items = {"Take Photo", "Choose from library", "Cancel"};
     public static final int PICK_IMAGE = 1;
     public static final int RESULT_LOAD_IMAGE = 2;
@@ -143,7 +141,6 @@ public class create_event extends Fragment implements DatePickerDialog.OnDateSet
         setevent=(Button)view.findViewById(R.id.setEvent);
         en=(TextView)view.findViewById(R.id.event);
         des=(TextView)view.findViewById(R.id.description);
-        Firebase.setAndroidContext(view.getContext());
         imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(final View view)
@@ -234,8 +231,6 @@ public class create_event extends Fragment implements DatePickerDialog.OnDateSet
                 DT.setEname(en.getText().toString());
                 DT.setDes(des.getText().toString());
 
-
-               new MyTask().execute();
 
 //                getFragmentManager().beginTransaction().add(R.id.frame_container,new myact()).commit();
             }
@@ -373,68 +368,6 @@ public class create_event extends Fragment implements DatePickerDialog.OnDateSet
 //            snackbar.show();
         }
 
-    }
-    public class MyTask extends AsyncTask<String, Integer,String> {
-
-        @Override
-        protected String doInBackground(String... params) {
-            fb=new Firebase(url);
-            storageReference= FirebaseStorage.getInstance().getReference();
-            final Adapter event=new Adapter();
-            event.setSd(DT.getStartD());
-            event.setDesp(DT.getDes());
-            event.setName(DT.getEname());
-            event.setLocation(loca.getText().toString());
-            event.setEd(DT.getEndD());
-
-//            eventadapters event=new eventadapters();
-//            event.setEname(DT.ename);
-//            event.setDesc(DT.des);
-//            event.setStartd(DT.startD);
-//            event.setStartt(DT.startT);
-//            event.setLocation(location);
-//            event.setLat(DT.lat);
-//            event.setLng(DT.lng);
-//            event.setEndd(DT.endD);
-//            event.setEndt(DT.endT);
-
-            df=new SimpleDateFormat("d MMM yyyy,HH:mm:ss a");
-            date=df.format(Calendar.getInstance().getTime());
-
-
-
-            StorageReference sr=storageReference.child("Events").child(date+"@"+DT.ename);
-            sr.putFile(imageData).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                @Override
-                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                    Uri downloaduri=taskSnapshot.getDownloadUrl();
-                    System.out.println("bowbow"+taskSnapshot.getStorage());
-                    // Uri ndi=taskSnapshot.getUploadSessionUri();
-                    // System.out.println("BOW"+ndi.toString());
-                    String DownloadUri=downloaduri.toString();
-                    event.setUrl(DownloadUri);
-                    event.setCom("0");
-                    event.setNotcom("0");
-                    fb.child("Events").child(date+"@"+DT.ename).setValue(event);
-                }
-            });
-
-            progressDialog.dismiss();
-            a=0;
-            getFragmentManager().beginTransaction().add(R.id.frame_container,new myact()).commit();
-
-            return null;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            progressDialog=new ProgressDialog(view.getContext());
-            progressDialog.setMessage("Creating event...");
-            progressDialog.setCancelable(false);
-            progressDialog.show();
-            super.onPreExecute();
-
-        }
     }
 }
 

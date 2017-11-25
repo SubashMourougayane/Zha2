@@ -35,8 +35,6 @@ public class photos extends Fragment {
          RecyclerView recyclerView;
          ImageView ig1,ig2;
     private StaggeredGridLayoutManager gaggeredGridLayoutManager;
-    Firebase fb;
-    String url="https://zhap-66ed5.firebaseio.com/";
         ArrayList<photoAdapter> pa=new ArrayList<>();
         photoItemAdapter pTD;
     public photos()
@@ -53,10 +51,7 @@ public class photos extends Fragment {
         recyclerView.setLayoutManager(gaggeredGridLayoutManager);
         ig1=(ImageView)view.findViewById(R.id.imageButton);
         ig2=(ImageView)view.findViewById(R.id.imageView2);
-        Firebase.setAndroidContext(view.getContext());
-        fb=new Firebase(url);
 
-        new MyTask().execute();
         ig1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -79,33 +74,5 @@ public class photos extends Fragment {
 //        pTD=new photoItemAdapter(R.layout.photos_card,pa);
 //        recyclerView.setAdapter(pTD);
         return view;
-    }
-    public class MyTask extends AsyncTask<String , Integer, String > {
-
-        @Override
-        protected String doInBackground(String... strings) {
-            fb.child("Photo").addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    for(DataSnapshot child: dataSnapshot.getChildren()){
-                        System.out.println("bow"+child.getKey());
-                        photoAdap photoadap=child.getValue(photoAdap.class);
-                        System.out.println("bow"+photoadap.getTitle());
-
-
-                        pa.add(new photoAdapter(photoadap.getTitle(),photoadap.getPurl()));
-
-                    }
-                    photoItemAdapter ptD=new photoItemAdapter(R.layout.photos_card,pa);
-                    recyclerView.setAdapter(ptD);
-                }
-
-                @Override
-                public void onCancelled(FirebaseError firebaseError) {
-
-                }
-            });
-            return null;
-        }
     }
 }

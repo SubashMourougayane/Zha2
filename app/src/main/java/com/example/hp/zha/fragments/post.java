@@ -27,8 +27,7 @@ import java.util.ArrayList;
  */
 
 public class post extends Fragment
-{   Firebase fb;
-    String url="https://zhap-66ed5.firebaseio.com/";
+{
     ImageView ig1,ig2;
     RecyclerView recyclerView;
     ArrayList<postAdapter> pa=new ArrayList<>();
@@ -47,9 +46,6 @@ public class post extends Fragment
         ig1=(ImageView)view.findViewById(R.id.imageButton);
         ig2=(ImageView)view.findViewById(R.id.imageView2);
         Firebase.setAndroidContext(view.getContext());
-        fb=new Firebase(url);
-
-        new MyTask().execute();
 
 //        pa.add(new postAdapter());
 //        pa.add(new postAdapter());
@@ -74,35 +70,5 @@ public class post extends Fragment
         });
         return view;
     }
-    public class MyTask extends AsyncTask<String , Integer, String >{
 
-        @Override
-        protected String doInBackground(String... strings) {
-            fb.child("Post").addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    for(DataSnapshot child: dataSnapshot.getChildren()){
-                         System.out.println("bow"+child.getKey());
-                         postAdap postadap=child.getValue(postAdap.class);
-                         System.out.println("bow"+postadap.getTitle());
-                         String s=child.getKey();
-                         String[] ss=s.split("@");
-                         System.out.println("bow"+ss[0]);
-
-
-                         pa.add(new postAdapter(postadap.getTitle(),postadap.getImgurl(),ss[0],ss[1]));
-
-                    }
-                    postItemAdapter ptD=new postItemAdapter(R.layout.post_card,pa);
-                    recyclerView.setAdapter(ptD);
-                }
-
-                @Override
-                public void onCancelled(FirebaseError firebaseError) {
-
-                }
-            });
-            return null;
-        }
-    }
 }
