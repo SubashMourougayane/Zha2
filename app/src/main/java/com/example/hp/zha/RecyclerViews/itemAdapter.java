@@ -74,8 +74,8 @@ public class itemAdapter extends  RecyclerView.Adapter<itemAdapter.ViewHolder>
         //ImageView item1=holder.imageView;
         item.setText(itemList.get(position).getName());
         item1.setText(itemList.get(position).getDesp());
-        item2.setText(itemList.get(position).getStart());
-        item3.setText(itemList.get(position).getEnd());
+        item2.setText(itemList.get(position).getSd());
+        item3.setText(itemList.get(position).getEd());
         item4.setText(itemList.get(position).getLocation());
         item5.setText(itemList.get(position).getCom());
         item6.setText(itemList.get(position).getNotcom());

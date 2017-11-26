@@ -44,24 +44,7 @@ public class Adapter {
 //        this.android_image_url = android_image_url;
 //    }
     String desp;
-    String Start;
-    String End;
 
-    public String getStart() {
-        return Start;
-    }
-
-    public void setStart(String start) {
-        Start = start;
-    }
-
-    public String getEnd() {
-        return End;
-    }
-
-    public void setEnd(String end) {
-        End = end;
-    }
 
     public String getLocation() {
         return Location;
@@ -108,8 +91,8 @@ public class Adapter {
 
         name = n;
         desp=f;
-        Start=s;
-        End=e;
+        sd=s;
+        ed=e;
         Location=loc;
         com=co;
         notcom=notc;

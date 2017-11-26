@@ -46,7 +46,7 @@ public class schedule extends Fragment {
             public void onSelectedDayChange(@NonNull CalendarView calendarView, int year, int month, int day)
             {
                 String picke_date=""+day+":"+month+":"+year;
-                //Toast.makeText(getActivity(), ""+picke_date, Toast.LENGTH_SHORT).show();
+                Toast.makeText(getActivity(), ""+picke_date, Toast.LENGTH_SHORT).show();
                 dummy.date_picked=picke_date;
                 getFragmentManager().beginTransaction().replace(R.id.frame_container,new schedule_view()).commit();
             }

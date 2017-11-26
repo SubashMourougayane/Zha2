@@ -33,7 +33,7 @@ public class myact extends Fragment
     //public itemAdapter itemArrayAdapter = new itemAdapter(R.layout.row,adapters);
     RecyclerView recyclerView1;
     ImageView ig1,ig2;
-
+    Firebase fb = new Firebase("https://zha-admin.firebaseio.com/");
     public myact()
     {
 
@@ -48,6 +48,7 @@ public class myact extends Fragment
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState)
     {
         View view;
+        Firebase.setAndroidContext(getActivity());
         view=inflater.inflate(R.layout.eventfragment,container,false);
         ig1=(ImageView)view.findViewById(R.id.imageButton);
         ig2=(ImageView)view.findViewById(R.id.imageView2);
@@ -67,17 +68,50 @@ public class myact extends Fragment
                 getFragmentManager().beginTransaction().add(R.id.frame_container,new create_event()).commit();
             }
         });
-
+        new MyTask().execute();
        recyclerView1=(RecyclerView)view.findViewById(R.id.recyclerView);
        recyclerView1.setLayoutManager(new LinearLayoutManager(view.getContext()));
 //        //recyclerView.addItemDecoration(itemDecoration);
 ////        recyclerView.setItemAnimator(new DefaultItemAnimator());   new
-        adapters.add(new Adapter("BirthDay","Am organizing a party ","2/7/2017","5/7/2017","Puducherry",""+2,""+0));
-       adapters.add(new Adapter("Long Drive","Lets Rock","3/7/2017","11/7/2017","Puducherry","",""));
-       adapters.add(new Adapter("Trainer Meeting","Regarding training skills","21/7/2017","5/8/2017","Puducherry",""+4,""+2));
+//        adapters.add(new Adapter("BirthDay","Am organizing a party ","2/7/2017","5/7/2017","Puducherry",""+2,""+0));
+
         itemAdapter itemArrayAdapter = new itemAdapter(R.layout.row2,adapters);
        recyclerView1.setAdapter(itemArrayAdapter);
         return view ;
 
     }
+    public class MyTask extends AsyncTask<String, Integer, String> {
+        @Override
+        protected String doInBackground(String... params) {
+            fb.child("Admin").child("Events").addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    for (DataSnapshot child : dataSnapshot.getChildren()) {
+                        System.out.println(child.getKey().toString()+"bow");
+                        Adapter adapter = child.getValue(Adapter.class);
+//                    Adapter adapter = dataSnapshot.getValue(Adapter.class);
+                        adapters.add(0, adapter);
+                        System.out.println(adapters.get(0).getName() + "bow");
+//                        adapters.add(adapter);
+                        System.out.println("child: " + dataSnapshot.getKey());
+                    }
+                    itemAdapter itemArrayAdapter= new itemAdapter(R.layout.row2, adapters);
+                    recyclerView1.setAdapter(itemArrayAdapter);
+
+                }
+
+                @Override
+                public void onCancelled(FirebaseError firebaseError) {
+
+                }
+            });
+            return null;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+    }
+
 }

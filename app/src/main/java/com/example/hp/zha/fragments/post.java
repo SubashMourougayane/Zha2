@@ -28,6 +28,8 @@ import java.util.ArrayList;
 
 public class post extends Fragment
 {
+    Firebase fb;
+    String url="https://zha-admin.firebaseio.com/";
     ImageView ig1,ig2;
     RecyclerView recyclerView;
     ArrayList<postAdapter> pa=new ArrayList<>();
@@ -42,7 +44,10 @@ public class post extends Fragment
         View view=inflater.inflate(R.layout.post,container,false);
         recyclerView=(RecyclerView)view.findViewById(R.id.recycler_post);
         recyclerView.setLayoutManager(new LinearLayoutManager(view.getContext()));
+        Firebase.setAndroidContext(view.getContext());
+        fb=new Firebase(url);
 
+        new MyTask().execute();
         ig1=(ImageView)view.findViewById(R.id.imageButton);
         ig2=(ImageView)view.findViewById(R.id.imageView2);
         Firebase.setAndroidContext(view.getContext());
@@ -69,6 +74,37 @@ public class post extends Fragment
             }
         });
         return view;
+    }
+    public class MyTask extends AsyncTask<String , Integer, String >{
+
+        @Override
+        protected String doInBackground(String... strings) {
+            fb.child("Admin").child("Post").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    for(DataSnapshot child: dataSnapshot.getChildren()){
+                        System.out.println("bow"+child.getKey());
+                        postAdap postadap=child.getValue(postAdap.class);
+                        System.out.println("bow"+postadap.getTitle());
+                        String s=child.getKey();
+                        String[] ss=s.split("@");
+                        System.out.println("bow"+ss[0]);
+
+
+                        pa.add(new postAdapter(postadap.getTitle(),postadap.getImgurl(),ss[0],ss[1]));
+
+                    }
+                    postItemAdapter ptD=new postItemAdapter(R.layout.post_card,pa);
+                    recyclerView.setAdapter(ptD);
+                }
+
+                @Override
+                public void onCancelled(FirebaseError firebaseError) {
+
+                }
+            });
+            return null;
+        }
     }
 
 }

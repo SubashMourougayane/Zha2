@@ -34,6 +34,7 @@ import java.util.ArrayList;
 public class photos extends Fragment {
          RecyclerView recyclerView;
          ImageView ig1,ig2;
+         Firebase fb;
     private StaggeredGridLayoutManager gaggeredGridLayoutManager;
         ArrayList<photoAdapter> pa=new ArrayList<>();
         photoItemAdapter pTD;
@@ -49,6 +50,8 @@ public class photos extends Fragment {
         recyclerView=(RecyclerView)view.findViewById(R.id.recycler_photos);
         gaggeredGridLayoutManager = new StaggeredGridLayoutManager(2, 1);
         recyclerView.setLayoutManager(gaggeredGridLayoutManager);
+        Firebase.setAndroidContext(getActivity());
+        fb = new Firebase("https://zha-admin.firebaseio.com/");
         ig1=(ImageView)view.findViewById(R.id.imageButton);
         ig2=(ImageView)view.findViewById(R.id.imageView2);
 
@@ -66,6 +69,7 @@ public class photos extends Fragment {
                 getFragmentManager().beginTransaction().add(R.id.frame_container,new create_photo()).commit();
             }
         });
+        new MyTask().execute();
 //        int i=10;
 //        while(i>=0) {
 //            pa.add(new photoAdapter());
@@ -75,4 +79,38 @@ public class photos extends Fragment {
 //        recyclerView.setAdapter(pTD);
         return view;
     }
+
+    public class MyTask extends AsyncTask<String , Integer, String > {
+
+        @Override
+        protected String doInBackground(String... strings) {
+            fb.child("Admin").child("Photos").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    for(DataSnapshot child: dataSnapshot.getChildren()){
+                        System.out.println("bow"+child.getKey());
+                        photoAdap photoadap=child.getValue(photoAdap.class);
+                        System.out.println("bow"+photoadap.getTitle());
+
+
+                        pa.add(new photoAdapter(photoadap.getTitle(),photoadap.getPurl()));
+
+                    }
+                    photoItemAdapter ptD=new photoItemAdapter(R.layout.photos_card,pa);
+                    recyclerView.setAdapter(ptD);
+                }
+
+                @Override
+                public void onCancelled(FirebaseError firebaseError) {
+
+                }
+            });
+            return null;
+        }
+    }
+
+
+
+
+
 }

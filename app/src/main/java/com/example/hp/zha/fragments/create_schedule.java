@@ -35,6 +35,7 @@ public class create_schedule extends Fragment implements TimePickerDialog.OnTime
     ImageView ig1;
     TextInputEditText ed;
     TextView ti;
+    Firebase firebase;
     public create_schedule() {
 
     }
@@ -44,6 +45,8 @@ public class create_schedule extends Fragment implements TimePickerDialog.OnTime
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         View view2;
         view2=inflater.inflate(R.layout.schedulesetter,container,false);
+        Firebase.setAndroidContext(getActivity());
+
         time=(FloatingActionButton)view2.findViewById(R.id.time);
         ti=(TextView)view2.findViewById(R.id.timeText) ;
         ed=(TextInputEditText) view2.findViewById(R.id.desc);
@@ -76,7 +79,9 @@ public class create_schedule extends Fragment implements TimePickerDialog.OnTime
         });
         add.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
+            public void onClick(View view)
+            {
+                new MyTask().execute();
 
             }
         });
@@ -88,9 +93,23 @@ public class create_schedule extends Fragment implements TimePickerDialog.OnTime
         String hourString = hourOfDay < 10 ? "0"+ hourOfDay : "" + hourOfDay;
         String minuteString = minute < 10 ? "0" + minute : "" + minute;
         String secondString = second < 10 ? "0" + second : "" + second;
-        String stime = hourString + "h" + minuteString + "m" + secondString + "s";
+        String stime = hourString + "h " + minuteString + "m " + secondString + "s";
         Toast.makeText(getActivity(), ""+stime, Toast.LENGTH_SHORT).show();
         ti.setText(stime);
+    }
+    public class MyTask extends AsyncTask<String, Integer, String> {
+
+        @Override
+        protected String doInBackground(String... strings) {
+            firebase = new Firebase("https://zha-admin.firebaseio.com/");
+            String descr=ed.getText().toString();
+            String time=ti.getText().toString();
+            schAdap schadap=new schAdap();
+            schadap.setDesc(descr);
+            firebase.child("Admin").child("Schedule").child(dummy.date_picked).child(time).setValue(schadap);
+            getFragmentManager().beginTransaction().replace(R.id.frame_container,new schedule_view()).commit();
+            return null;
+        }
     }
 
 }

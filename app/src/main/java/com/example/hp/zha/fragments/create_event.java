@@ -89,7 +89,7 @@ public class create_event extends Fragment implements DatePickerDialog.OnDateSet
     public int a=0;
     Uri selectedImageUri,imageUri;
     //Context CurrentObj=getActivity();
-
+    Firebase fb;
     public Context context1;
     public Iterator<String> iterator=sr.iterator();
     public FragmentManager fragmentManager=getFragmentManager();
@@ -114,6 +114,8 @@ public class create_event extends Fragment implements DatePickerDialog.OnDateSet
         //View view2;
         view=inflater.inflate(R.layout.event1,container,false);
         context1=view.getContext();
+        Firebase.setAndroidContext(getActivity());
+        fb = new Firebase("https://zha-admin.firebaseio.com/");
         imageView = (ImageView)view. findViewById(R.id.profile_image);
         ig1=(ImageView)view.findViewById(R.id.imageButton);
         ig2=(ImageView)view.findViewById(R.id.imageView2);
@@ -230,7 +232,7 @@ public class create_event extends Fragment implements DatePickerDialog.OnDateSet
             {
                 DT.setEname(en.getText().toString());
                 DT.setDes(des.getText().toString());
-
+                new MyTask().execute();
 
 //                getFragmentManager().beginTransaction().add(R.id.frame_container,new myact()).commit();
             }
@@ -369,5 +371,74 @@ public class create_event extends Fragment implements DatePickerDialog.OnDateSet
         }
 
     }
+
+
+
+    public class MyTask extends AsyncTask<String, Integer,String> {
+
+        @Override
+        protected String doInBackground(String... params) {
+            fb=new Firebase("https://zha-admin.firebaseio.com/");
+            storageReference= FirebaseStorage.getInstance().getReference();
+            final Adapter event=new Adapter();
+            event.setSd(DT.getStartD());
+            event.setDesp(DT.getDes());
+            event.setName(DT.getEname());
+            event.setLocation(loca.getText().toString());
+            event.setEd(DT.getEndD());
+
+//            eventadapters event=new eventadapters();
+//            event.setEname(DT.ename);
+//            event.setDesc(DT.des);
+//            event.setStartd(DT.startD);
+//            event.setStartt(DT.startT);
+//            event.setLocation(location);
+//            event.setLat(DT.lat);
+//            event.setLng(DT.lng);
+//            event.setEndd(DT.endD);
+//            event.setEndt(DT.endT);
+
+            df=new SimpleDateFormat("d MMM yyyy,HH:mm:ss a");
+            date=df.format(Calendar.getInstance().getTime());
+
+
+
+            StorageReference sr=storageReference.child("Admin").child("Events").child(date+"@"+DT.ename);
+            sr.putFile(imageData).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                @Override
+                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                    Uri downloaduri=taskSnapshot.getDownloadUrl();
+                    System.out.println("bowbow"+taskSnapshot.getStorage());
+                    // Uri ndi=taskSnapshot.getUploadSessionUri();
+                    // System.out.println("BOW"+ndi.toString());
+                    String DownloadUri=downloaduri.toString();
+                    event.setUrl(DownloadUri);
+                    event.setCom("0");
+                    event.setNotcom("0");
+                    fb.child("Admin").child("Events").child(date+"@"+DT.ename).setValue(event);
+                }
+            });
+
+            progressDialog.dismiss();
+            a=0;
+            getFragmentManager().beginTransaction().add(R.id.frame_container,new myact()).commit();
+
+            return null;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            progressDialog=new ProgressDialog(view.getContext());
+            progressDialog.setMessage("Creating event...");
+            progressDialog.setCancelable(false);
+            progressDialog.show();
+            super.onPreExecute();
+
+        }
+    }
+
+
+
+
 }
 

@@ -67,7 +67,6 @@ public class create_photo extends Fragment {
     public ProgressDialog progressDialog;
     public StorageReference fb_stg;
     public Firebase fb;
-    String Base_Url = "https://zha-admin.firebaseio.com/Admin/";
     double progress = 0.0;
     Notification notification;
     String userChoosenTask;
@@ -76,7 +75,9 @@ public class create_photo extends Fragment {
     Uri SelectedUri=null;
     private String selectedImagePath;
     String mCurrentPhotoPath;
-
+    Firebase Fb_db;
+    String Base_Url="https://zha-admin.firebaseio.com/";
+    StorageReference storageReference;
     public create_photo() {
 
     }
@@ -106,7 +107,14 @@ public class create_photo extends Fragment {
             @Override
             public void onClick(View view)
             {
-//                new MyTask().execute();
+//                UploadTask Up = storageReference.putFile(SelectedUri);
+//                Up.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+//                    @Override
+//                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+//                        Toast.makeText(getActivity(),"Image Uploaded",Toast.LENGTH_SHORT).show();
+//                    }
+//                });
+                new MyTask().execute();
             }
         });
         imageView.setOnClickListener(new View.OnClickListener() {
@@ -143,7 +151,15 @@ public class create_photo extends Fragment {
     }
     private void cameraIntent()
     {
+        String fileName = "new-photo-name.jpg";
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Images.Media.TITLE, fileName);
+        values.put(MediaStore.Images.Media.DESCRIPTION, "Image capture by camera");
+        SelectedUri = getActivity().getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+        System.out.println("URI CAMMMMM"+SelectedUri);
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, SelectedUri);
+        intent.putExtra(MediaStore.EXTRA_VIDEO_QUALITY, 1);
         startActivityForResult(intent, REQUEST_CAMERA);
     }
     private void galleryIntent()
@@ -179,8 +195,7 @@ public class create_photo extends Fragment {
                 onSelectFromGalleryResult(data);
             }
             else if (requestCode == REQUEST_CAMERA){
-                SelectedUri = data.getData();
-                System.out.println("URI CAM "+SelectedUri);
+
                 imageView.setImageURI(SelectedUri);
                 onCaptureImageResult(data);
             }
@@ -200,10 +215,11 @@ public class create_photo extends Fragment {
         imageView.setImageBitmap(bm);
     }
     private void onCaptureImageResult(Intent data) {
+
         Bitmap thumbnail = (Bitmap) data.getExtras().get("data");
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         thumbnail.compress(Bitmap.CompressFormat.JPEG, 90, bytes);
-        File destination = new File(Environment.getExternalStorageDirectory(),"img.jpg");
+        File destination = new File(Environment.getExternalStorageDirectory(),"new-photo-name.jpg");
         FileOutputStream fo;
         try {
             destination.createNewFile();
@@ -216,6 +232,49 @@ public class create_photo extends Fragment {
             e.printStackTrace();
         }
         imageView.setImageBitmap(thumbnail);
+    }
+
+    public class MyTask extends AsyncTask<String, Integer, String> {
+
+        @Override
+        protected void onPreExecute() {
+            progressDialog=new ProgressDialog(getContext());
+            progressDialog.setMessage("Creating event...");
+            progressDialog.setCancelable(false);
+            progressDialog.show();
+            super.onPreExecute();
+
+        }
+
+        @Override
+        protected String doInBackground(String... strings) {
+            fb_stg= FirebaseStorage.getInstance().getReference();
+            Calendar c =Calendar.getInstance();
+            SimpleDateFormat sdf= new SimpleDateFormat("dd-MM-yyyy");
+            SimpleDateFormat ssf=new SimpleDateFormat("HH:mm");
+            final String date=sdf.format(c.getTime());
+            final String time=ssf.format(c.getTime());
+            System.out.println("ammo"+time);
+            final String posttitle=des.getText().toString();
+
+            StorageReference stg=fb_stg.child("Admin").child("Photos").child(date+"@"+time+"@"+posttitle);
+            stg.putFile(SelectedUri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                @Override
+                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                    Uri downloaduri=taskSnapshot.getDownloadUrl();
+                    String downloadurl=downloaduri.toString();
+                    photoAdap photoadap=new photoAdap();
+                    photoadap.setPurl(downloadurl);
+                    photoadap.setTitle(posttitle);
+                    fb.child("Admin").child("Photos").child(date+"@"+time+"@"+posttitle).setValue(photoadap);
+                    progressDialog.dismiss();
+                    getFragmentManager().beginTransaction().replace(R.id.frame_container,new photos()).commit();
+                }
+            });
+
+            return null;
+        }
+
     }
 
 

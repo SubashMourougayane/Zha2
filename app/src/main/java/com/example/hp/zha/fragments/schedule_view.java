@@ -37,6 +37,7 @@ public class schedule_view extends Fragment
     RecyclerView recyclerView;
     ArrayList<scheduleAdapter> sad=new ArrayList<>();
     scheduleItemAdapter sID;
+    Firebase fb;
     public schedule_view() {
 
     }
@@ -50,6 +51,9 @@ public class schedule_view extends Fragment
         t2=(TextView)view1.findViewById(R.id.date);
         ig1=(ImageView)view1.findViewById(R.id.imageButton);
         t2.setText(dummy.date_picked);
+        Firebase.setAndroidContext(getActivity());
+        fb= new Firebase("https://zha-admin.firebaseio.com/");
+        new MyTask().execute();
         recyclerView=(RecyclerView)view1.findViewById(R.id.recycler_schedule);
         recyclerView.setLayoutManager(new LinearLayoutManager(view1.getContext()));
 //        sad.add(new scheduleAdapter());
@@ -76,5 +80,30 @@ public class schedule_view extends Fragment
 
         return view1;
     }
+    public class MyTask extends AsyncTask<String, Integer, String>{
+
+        @Override
+        protected String doInBackground(String... strings) {
+            fb.child("Admin").child("Schedule").child(dummy.date_picked).addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    for(DataSnapshot child: dataSnapshot.getChildren()){
+                        schAdap schadap=child.getValue(schAdap.class);
+                        sad.add(new scheduleAdapter(child.getKey(),schadap.getDesc()));
+                    }
+                    sID=new scheduleItemAdapter(R.layout.schedulecard,sad);
+                    recyclerView.setAdapter(sID);
+
+                }
+
+                @Override
+                public void onCancelled(FirebaseError firebaseError) {
+
+                }
+            });
+            return null;
+        }
+    }
+
 
 }

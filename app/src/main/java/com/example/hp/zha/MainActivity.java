@@ -37,6 +37,8 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
         final CircleMenuView menu = (CircleMenuView) findViewById(R.id.circle_menu);
         Firebase.setAndroidContext(this);
+        fb = new Firebase("https://zha-admin.firebaseio.com/");
+        new MyTask().execute();
 //        for(int i=0;i<=20;i++)
 //        {
 //            wallList.add(new wallAdapter());
@@ -86,5 +88,36 @@ public class MainActivity extends AppCompatActivity
                 startActivity(i);
             }
         });
+    }
+    public class MyTask extends AsyncTask<String , Integer, String > {
+
+        @Override
+        protected String doInBackground(String... strings) {
+            fb.child("Admin").child("Post").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    for(DataSnapshot child: dataSnapshot.getChildren()){
+                        System.out.println("bow"+child.getKey());
+                        wallAdap walladap=child.getValue(wallAdap.class);
+                        System.out.println("bow"+walladap.getTitle());
+                        String s=child.getKey();
+                        String[] ss=s.split("@");
+                        System.out.println("bow"+ss[0]);
+
+
+                        wallList.add(new wallAdapter(walladap.getTitle(),walladap.getImgurl(),ss[0],ss[1]));
+
+                    }
+                    wallItemAdapter ptD=new wallItemAdapter(R.layout.wall_card,wallList);
+                    recyclerView.setAdapter(ptD);
+                }
+
+                @Override
+                public void onCancelled(FirebaseError firebaseError) {
+
+                }
+            });
+            return null;
+        }
     }
 }
